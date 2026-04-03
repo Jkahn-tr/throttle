@@ -1,16 +1,24 @@
 {
   "name": "throttle-ai",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Universal AI cost meter and model control panel — self-hosted",
   "main": "src/index.js",
   "bin": {
-    "throttle": "./bin/throttle.js"
+    "throttle": "bin/throttle.js"
   },
   "scripts": {
     "start": "node bin/throttle.js start",
     "dev": "node bin/throttle.js start --dev"
   },
-  "keywords": ["ai", "llm", "cost", "monitoring", "openai", "anthropic", "ollama"],
+  "keywords": [
+    "ai",
+    "llm",
+    "cost",
+    "monitoring",
+    "openai",
+    "anthropic",
+    "ollama"
+  ],
   "license": "MIT",
   "dependencies": {
     "sqlite3": "^5.1.7",
@@ -18,5 +26,14 @@
     "express": "^4.18.2",
     "node-fetch": "^2.7.0",
     "open": "^8.4.2"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "public/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

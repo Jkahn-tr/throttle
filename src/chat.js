@@ -80,6 +80,7 @@ function extractModel(msg) {
   const modelMap = {
     'gpt-4o-mini':       ['gpt-4o-mini','gpt 4o mini','4o mini','gpt4omini'],
     'claude-sonnet-4-6': ['sonnet 4.6','sonnet-4-6','claude sonnet','sonnet 4','claude 4','sonnet'],
+    'claude-opus-4-6':   ['opus 4.6','opus-4-6','claude opus 4.6'],
     'claude-opus-4':     ['opus 4','claude opus','opus'],
     'claude-haiku-3-5':  ['haiku 3.5','haiku-3-5','claude haiku','haiku'],
     'claude-haiku-3':    ['haiku 3','haiku-3'],
