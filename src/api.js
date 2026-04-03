@@ -87,7 +87,7 @@ function registerAPI(app) {
     const models = Object.entries(PRICING).map(([id, p]) => ({
       id,
       provider: id.startsWith('claude') ? 'anthropic' :
-                id.startsWith('gpt')||id.startsWith('o3')||id.startsWith('o4') ? 'openai' :
+                id.startsWith('gpt')||id.startsWith('o3')||id.startsWith('o4')||id.startsWith('o1') ? 'openai' :
                 id.startsWith('gemini') ? 'google' :
                 id.startsWith('llama')||id.startsWith('mixtral') ? 'groq' : 'other',
       input_per_m: p.input, output_per_m: p.output, has_cache: p.cacheRead > 0,

@@ -10,6 +10,12 @@ const PRICING = {
   'claude-haiku-3-5':       { input: 0.80,  output: 4.00,  cacheRead: 0.08,  cacheWrite: 1.00  },
   'claude-haiku-3':         { input: 0.25,  output: 1.25,  cacheRead: 0.03,  cacheWrite: 0.30  },
   // OpenAI
+  'gpt-5':                  { input: 1.25,  output: 10.00, cacheRead: 0.125, cacheWrite: 0     },
+  'gpt-5-mini':             { input: 0.625, output: 5.00,  cacheRead: 0.075, cacheWrite: 0     },
+  'gpt-5.4':                { input: 2.50,  output: 15.00, cacheRead: 0.25,  cacheWrite: 0     },
+  'gpt-5.4-mini':           { input: 0.40,  output: 1.60,  cacheRead: 0.04,  cacheWrite: 0     },
+  'gpt-4.1':                { input: 2.00,  output: 8.00,  cacheRead: 0.50,  cacheWrite: 0     },
+  'gpt-4.1-mini':           { input: 0.40,  output: 1.60,  cacheRead: 0.10,  cacheWrite: 0     },
   'gpt-4o':                 { input: 2.50,  output: 10.00, cacheRead: 1.25,  cacheWrite: 0     },
   'gpt-4o-mini':            { input: 0.15,  output: 0.60,  cacheRead: 0.075, cacheWrite: 0     },
   'o3':                     { input: 10.00, output: 40.00, cacheRead: 5.00,  cacheWrite: 0     },
