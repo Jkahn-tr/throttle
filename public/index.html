@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Throttle — AI Control Panel</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080706;--surface:#0F0E0A;--surface-2:#141210;--surface-3:#1A1814;
+  --border:#1E1C18;--border-2:#2A2820;
+  --text:#F0E8DC;--text-2:#C8BAA8;--text-3:#8A7A68;--text-4:#5A5040;
+  --ember:#D4651A;--ember-d:#1A0C04;--ember-m:#7A3C0F;
+  --green:#3DA874;--green-d:#0A1A12;
+  --gold:#C9A84C;--gold-d:#181208;
+  --blue:#4A8FD4;--blue-d:#080E18;
+  --red:#C84A4A;
+  --radius:10px;
+  --shadow:0 1px 3px rgba(0,0,0,.5),0 4px 20px rgba(0,0,0,.4);
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+
+/* LAYOUT */
+.app{display:flex;flex:1;height:100vh;overflow:hidden}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.main{flex:1;overflow-y:auto;padding:28px}
+
+/* SIDEBAR */
+.logo{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
+.logo-mark{font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--text)}
+.logo-mark span{color:var(--ember)}
+.logo-sub{font-size:10px;color:var(--text-4);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.nav{padding:12px 8px;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--text-3);transition:background .12s,color .12s;margin-bottom:2px;user-select:none}
+.nav-item:hover{background:var(--surface-2);color:var(--text-2)}
+.nav-item.active{background:var(--ember-d);color:var(--ember)}
+.nav-icon{font-size:15px;width:18px;text-align:center}
+.sidebar-footer{padding:14px;border-top:1px solid var(--border)}
+.proxy-status{background:var(--surface-2);border:1px solid var(--border-2);border-radius:7px;padding:10px 12px}
+.proxy-label{font-size:10px;color:var(--text-4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.proxy-url{font-size:11px;color:var(--green);font-family:monospace;word-break:break-all}
+.proxy-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:5px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* VIEWS */
+.view{display:none}
+.view.active{display:block}
+
+/* PAGE HEADER */
+.page-header{margin-bottom:24px}
+.page-title{font-size:22px;font-weight:700;letter-spacing:-.015em;color:var(--text)}
+.page-sub{font-size:13px;color:var(--text-3);margin-top:4px}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.kpi-label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-4);margin-bottom:10px}
+.kpi-value{font-size:26px;font-weight:800;letter-spacing:-.025em;line-height:1}
+.kpi-sub{font-size:11px;color:var(--text-3);margin-top:5px}
+.c-ember{color:var(--ember)}.c-green{color:var(--green)}.c-gold{color:var(--gold)}.c-blue{color:var(--blue)}.c-red{color:var(--red)}
+
+/* BUDGET METER */
+.budget-bar-wrap{margin-bottom:22px}
+.budget-bar-bg{height:6px;background:var(--border-2);border-radius:3px;overflow:hidden;margin-top:8px}
+.budget-bar-fill{height:100%;border-radius:3px;transition:width .5s ease,background .3s}
+.budget-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--text-3);margin-top:5px}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);margin-bottom:18px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.card-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-4)}
+.card-action{font-size:12px;color:var(--ember);cursor:pointer;text-decoration:none}
+.card-action:hover{text-decoration:underline}
+
+/* GRID 2 */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+
+/* BAR CHART */
+.chart-wrap{height:160px;display:flex;align-items:flex-end;gap:5px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.bar-stack{width:100%;display:flex;flex-direction:column-reverse;border-radius:3px 3px 0 0;overflow:hidden;cursor:pointer}
+.bar-stack:hover{opacity:.8}
+.bar-seg{width:100%;transition:height .4s ease}
+.bar-lbl{font-size:8px;color:var(--text-4);margin-top:5px;text-align:center;white-space:nowrap}
+.bar-lbl.today{color:var(--ember);font-weight:700}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:0 10px 10px;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-4);border-bottom:1px solid var(--border)}
+td{padding:10px;border-bottom:1px solid var(--border);color:var(--text-2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+
+/* PILL */
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700}
+.pill-green{background:var(--green-d);color:var(--green);border:1px solid rgba(61,168,116,.2)}
+.pill-ember{background:var(--ember-d);color:var(--ember);border:1px solid rgba(212,101,26,.2)}
+.pill-gold{background:var(--gold-d);color:var(--gold);border:1px solid rgba(201,168,76,.2)}
+.pill-blue{background:var(--blue-d);color:var(--blue);border:1px solid rgba(74,143,212,.2)}
+.pill-gray{background:var(--surface-2);color:var(--text-3);border:1px solid var(--border)}
+
+/* CONTROL PANEL */
+.control-section{margin-bottom:28px}
+.control-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-4);margin-bottom:14px}
+.model-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.model-card{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:border-color .15s,background .15s}
+.model-card:hover{border-color:var(--border-2);background:var(--surface-3)}
+.model-card.selected{border-color:var(--ember);background:var(--ember-d)}
+.model-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.model-provider{font-size:10px;color:var(--text-4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+.model-price{font-size:11px;color:var(--text-3)}
+.model-price strong{color:var(--text-2)}
+
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-info{}
+.setting-name{font-size:14px;font-weight:600;color:var(--text)}
+.setting-desc{font-size:12px;color:var(--text-3);margin-top:2px}
+.setting-control{flex-shrink:0;margin-left:16px}
+
+/* INPUTS */
+input[type=text],input[type=number],select{
+  background:var(--surface-2);border:1px solid var(--border);
+  color:var(--text);border-radius:6px;padding:7px 10px;
+  font-size:13px;font-family:inherit;outline:none;
+  transition:border-color .15s;
+}
+input[type=text]:focus,input[type=number]:focus,select:focus{border-color:var(--ember)}
+select option{background:var(--surface-2);color:var(--text)}
+
+/* TOGGLE */
+.toggle{position:relative;display:inline-block;width:36px;height:20px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;background:var(--border-2);border-radius:10px;transition:background .2s}
+.toggle input:checked + .toggle-track{background:var(--ember)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle input:checked ~ .toggle-thumb{transform:translateX(16px)}
+
+/* BTN */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:opacity .15s}
+.btn-ember{background:var(--ember);color:#fff}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text-2)}
+.btn:hover{opacity:.85}
+.btn:active{opacity:.7}
+
+/* SAVE BAR */
+.save-bar{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;margin:-22px -22px -22px}
+.save-msg{font-size:13px;color:var(--text-3)}
+
+/* TOOLTIP */
+.tip{position:fixed;background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:10px 13px;font-size:12px;line-height:1.7;color:var(--text-2);z-index:200;pointer-events:none;opacity:0;transition:opacity .12s;min-width:160px;box-shadow:0 4px 24px rgba(0,0,0,.7)}
+.tip.show{opacity:1}
+.tip-title{font-weight:700;color:var(--text);margin-bottom:5px;font-size:13px}
+.tip-row{display:flex;justify-content:space-between;gap:14px}
+.tip-k{color:var(--text-3)}.tip-v{font-weight:600;color:var(--text)}
+
+/* LIVE DOT */
+.live-dot{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--green)}
+.live-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
+
+/* CHAT BUBBLES */
+.chat-msg{display:flex;max-width:680px}
+.chat-msg.user{margin-left:auto;flex-direction:row-reverse}
+.chat-bubble{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:14px;line-height:1.6;color:var(--text-2)}
+.chat-msg.user .chat-bubble{background:var(--ember-d);border-color:rgba(212,101,26,.25);color:var(--text)}
+.chat-bubble strong{color:var(--text)}
+.chat-bubble em{color:var(--text-3);font-style:italic}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:13px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-mark"><span>Throttle</span></div>
+      <div class="logo-sub">AI Control Panel</div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="nav-item active" data-view="dashboard"><div class="nav-icon">📊</div>Dashboard</div>
+      <div class="nav-item" data-view="models"><div class="nav-icon">🧠</div>Models</div>
+      <div class="nav-item" data-view="requests"><div class="nav-icon">⚡</div>Request Log</div>
+      <div class="nav-item" data-view="chat"><div class="nav-icon">💬</div>Chat</div>
+      <div class="nav-item" data-view="settings"><div class="nav-icon">⚙️</div>Settings</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="proxy-status">
+        <div class="proxy-label">Proxy endpoint</div>
+        <div class="proxy-url"><span class="proxy-dot"></span>localhost:4000</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <div class="page-header">
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub"><span class="live-dot" id="live-label">Live</span> &nbsp;·&nbsp; All providers combined</div>
+      </div>
+
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi"><div class="kpi-label">Today's Cost</div><div class="kpi-value c-ember" id="k-cost">—</div><div class="kpi-sub" id="k-calls">—</div></div>
+        <div class="kpi"><div class="kpi-label">Cache Savings</div><div class="kpi-value c-green" id="k-savings">—</div><div class="kpi-sub">vs. full price</div></div>
+        <div class="kpi"><div class="kpi-label">Cache Hit Rate</div><div class="kpi-value c-blue" id="k-cachehit">—</div><div class="kpi-sub" id="k-cacheread">—</div></div>
+        <div class="kpi"><div class="kpi-label">Avg Latency</div><div class="kpi-value c-gold" id="k-latency">—</div><div class="kpi-sub">per request</div></div>
+      </div>
+
+      <!-- Budget bar -->
+      <div class="card budget-bar-wrap">
+        <div class="card-header" style="margin-bottom:8px">
+          <div class="card-title">Daily Budget</div>
+          <div id="budget-pct-label" style="font-size:12px;color:var(--text-3)">—</div>
+        </div>
+        <div class="budget-bar-bg"><div class="budget-bar-fill" id="budget-fill" style="width:0%"></div></div>
+        <div class="budget-meta"><span id="budget-spent">$0 spent</span><span id="budget-limit">of $50 limit</span></div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Cost chart -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Daily Cost — 14 days</div>
+            <div style="display:flex;gap:12px;font-size:11px;color:var(--text-3)">
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ember);margin-right:4px"></span>Cost</span>
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:4px;opacity:.7"></span>Savings</span>
+            </div>
+          </div>
+          <div class="chart-wrap" id="cost-chart"><div class="empty">Loading…</div></div>
+        </div>
+
+        <!-- Model breakdown -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">Top Models — 30 days</div></div>
+          <div id="model-breakdown"><div class="empty">Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- Recent requests mini -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Recent Requests</div>
+          <a class="card-action" onclick="switchView('requests')">View all →</a>
+        </div>
+        <div id="recent-mini"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- MODELS -->
+    <div class="view" id="view-models">
+      <div class="page-header">
+        <div class="page-title">Model Control</div>
+        <div class="page-sub">Switch your active model — changes apply to all new requests instantly</div>
+      </div>
+
+      <div class="control-section">
+        <div class="control-label">Active Model</div>
+        <div class="model-grid" id="model-grid"><div class="empty">Loading…</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Model Pricing Reference</div></div>
+        <table>
+          <thead><tr>
+            <th>Model</th><th>Provider</th>
+            <th class="num">Input / M</th>
+            <th class="num">Output / M</th>
+            <th class="num">Cache Read</th>
+            <th>Cache</th>
+          </tr></thead>
+          <tbody id="pricing-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- REQUESTS -->
+    <div class="view" id="view-requests">
+      <div class="page-header">
+        <div class="page-title">Request Log</div>
+        <div class="page-sub">Last 50 requests through the proxy</div>
+      </div>
+      <div class="card" style="padding:0 0 0 0;overflow:hidden">
+        <table>
+          <thead><tr>
+            <th>Time</th><th>Provider</th><th>Model</th>
+            <th class="num">In</th><th class="num">Out</th>
+            <th class="num">Cost</th><th class="num">Latency</th>
+            <th>Status</th>
+          </tr></thead>
+          <tbody id="req-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="view" id="view-chat">
+      <div class="page-header">
+        <div class="page-title">Chat</div>
+        <div class="page-sub">Ask about costs, switch models, or get a summary — in plain English</div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;height:calc(100vh - 180px);padding:0;overflow:hidden">
+        <div id="chat-messages" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px">
+          <div class="chat-msg bot">
+            <div class="chat-bubble">👋 Hey! Ask me anything about your AI usage.<br><br>Try: <em>"what am I spending today?"</em> or <em>"switch to claude haiku"</em> or <em>"show me a summary"</em></div>
+          </div>
+        </div>
+        <div style="padding:14px;border-top:1px solid var(--border);display:flex;gap:10px">
+          <input id="chat-input" type="text" placeholder="Ask about costs, models, stats…" style="flex:1;padding:10px 14px;font-size:14px" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn btn-ember" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="view" id="view-settings">
+      <div class="page-header">
+        <div class="page-title">Settings</div>
+        <div class="page-sub">Configure Throttle and your provider connections</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Budget & Alerts</div></div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Daily budget limit</div>
+            <div class="setting-desc">Warn when daily spend approaches this amount</div>
+          </div>
+          <div class="setting-control"><input type="number" id="cfg-daily-budget" value="50" step="5" style="width:80px"> &nbsp;<span style="font-size:13px;color:var(--text-3)">USD</span></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Alert threshold</div>
+            <div class="setting-desc">Show warning banner at this % of daily budget</div>
+          </div>
+          <div class="setting-control"><input type="number" id="cfg-alert-threshold" value="80" min="1" max="100" style="width:80px"> &nbsp;<span style="font-size:13px;color:var(--text-3)">%</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">API Keys</div></div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-name">Anthropic API Key</div><div class="setting-desc">Required for Claude models</div></div>
+          <div class="setting-control"><input type="text" id="cfg-anthropic-key" placeholder="sk-ant-..." style="width:240px"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-name">OpenAI API Key</div><div class="setting-desc">Required for GPT models</div></div>
+          <div class="setting-control"><input type="text" id="cfg-openai-key" placeholder="sk-..." style="width:240px"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-name">Google AI API Key</div><div class="setting-desc">Required for Gemini models</div></div>
+          <div class="setting-control"><input type="text" id="cfg-google-key" placeholder="AIza..." style="width:240px"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-name">Groq API Key</div><div class="setting-desc">Required for Llama/Mixtral via Groq</div></div>
+          <div class="setting-control"><input type="text" id="cfg-groq-key" placeholder="gsk_..." style="width:240px"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Local Models</div></div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-name">Ollama endpoint</div><div class="setting-desc">Default: http://localhost:11434</div></div>
+          <div class="setting-control"><input type="text" id="cfg-ollama-endpoint" placeholder="http://localhost:11434" style="width:240px"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-name">LM Studio endpoint</div><div class="setting-desc">Default: http://localhost:1234</div></div>
+          <div class="setting-control"><input type="text" id="cfg-lmstudio-endpoint" placeholder="http://localhost:1234" style="width:240px"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:8px">
+        <button class="btn btn-ember" onclick="saveSettings()">Save Settings</button>
+        <span id="save-msg" style="font-size:13px;color:var(--green);margin-left:12px;opacity:0;transition:opacity .3s"></span>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<div class="tip" id="tip"></div>
+
+<script>
+const BASE = '';
+
+// NAV
+document.getElementById('nav').addEventListener('click', e => {
+  const item = e.target.closest('[data-view]');
+  if (!item) return;
+  switchView(item.dataset.view);
+});
+function switchView(name) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.view === name));
+  document.querySelectorAll('.view').forEach(el => el.classList.toggle('active', el.id === `view-${name}`));
+  if (name === 'requests') loadRequests();
+  if (name === 'models') loadModels();
+  if (name === 'settings') loadSettings();
+}
+
+// HELPERS
+const fmt = n => n >= 1e9 ? (n/1e9).toFixed(1)+'B' : n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : (n||0).toLocaleString();
+const fmtMs = ms => ms >= 1000 ? (ms/1000).toFixed(1)+'s' : Math.round(ms||0)+'ms';
+const fmtDate = s => s ? s.slice(5,10) : '';
+
+// TOOLTIP
+const tip = document.getElementById('tip');
+function showTip(e, html) {
+  tip.innerHTML = html;
+  tip.classList.add('show');
+  moveTip(e);
+}
+function moveTip(e) {
+  tip.style.left = (e.clientX+12)+'px';
+  tip.style.top = (e.clientY-10)+'px';
+}
+function hideTip() { tip.classList.remove('show'); }
+
+// PROVIDER PILL
+const providerColors = {anthropic:'pill-ember',openai:'pill-green',google:'pill-blue',groq:'pill-gold',ollama:'pill-gray',local:'pill-gray'};
+function provPill(p) { return `<span class="pill ${providerColors[p]||'pill-gray'}">${p||'?'}</span>`; }
+
+// ─── DASHBOARD ───
+async function loadDashboard() {
+  const [today, daily, models, budget, recent] = await Promise.all([
+    fetch('/api/stats/today').then(r=>r.json()),
+    fetch('/api/stats/daily?days=14').then(r=>r.json()),
+    fetch('/api/stats/models').then(r=>r.json()),
+    fetch('/api/budget/status').then(r=>r.json()),
+    fetch('/api/stats/recent').then(r=>r.json()),
+  ]);
+
+  // KPIs
+  document.getElementById('k-cost').textContent = '$' + (today.cost||0).toFixed(2);
+  document.getElementById('k-calls').textContent = (today.calls||0) + ' requests today';
+  document.getElementById('k-savings').textContent = '$' + (today.cache_savings||0).toFixed(2);
+  const totalTok = (today.input||0)+(today.output||0)+(today.cache_read||0)+(today.cache_write||0);
+  const hitRate = totalTok ? ((today.cache_read||0)/totalTok*100).toFixed(0) : 0;
+  document.getElementById('k-cachehit').textContent = hitRate + '%';
+  document.getElementById('k-cacheread').textContent = fmt(today.cache_read||0) + ' tokens from cache';
+  document.getElementById('k-latency').textContent = fmtMs(today.avg_latency||0);
+
+  // Budget
+  const pct = Math.min(100, budget.pct||0);
+  const fill = document.getElementById('budget-fill');
+  fill.style.width = pct + '%';
+  fill.style.background = pct >= 90 ? 'var(--red)' : pct >= 70 ? 'var(--gold)' : 'var(--ember)';
+  document.getElementById('budget-pct-label').textContent = pct.toFixed(0) + '% used';
+  document.getElementById('budget-spent').textContent = '$' + (budget.spent||0).toFixed(2) + ' spent';
+  document.getElementById('budget-limit').textContent = 'of $' + (budget.budget||50) + ' limit';
+
+  // Chart
+  const chartEl = document.getElementById('cost-chart');
+  chartEl.innerHTML = '';
+  const sorted = [...daily].reverse();
+  const maxV = Math.max(...sorted.map(d=>(d.cost||0)+(d.cache_savings||0)), 1);
+  const H = 150;
+
+  if (!sorted.length) { chartEl.innerHTML = '<div class="empty">No data yet — make a request through the proxy to see data here.</div>'; }
+  else sorted.forEach(d => {
+    const isToday = d.day === new Date().toISOString().slice(0,10);
+    const costH = Math.round(((d.cost||0)/maxV)*H);
+    const savH = Math.round(((d.cache_savings||0)/maxV)*H);
+    const col = document.createElement('div');
+    col.className = 'bar-col';
+    col.innerHTML = `
+      <div class="bar-stack" style="height:${costH+savH}px">
+        <div class="bar-seg" style="height:${savH}px;background:var(--green);opacity:.7"></div>
+        <div class="bar-seg" style="height:${costH}px;background:${isToday?'var(--ember)':'var(--ember-m)'}"></div>
+      </div>
+      <div class="bar-lbl ${isToday?'today':''}">${isToday?'today':fmtDate(d.day)}</div>`;
+    col.querySelector('.bar-stack').addEventListener('mousemove', e => showTip(e, `
+      <div class="tip-title">${d.day}</div>
+      <div class="tip-row"><span class="tip-k">Requests</span><span class="tip-v">${d.calls||0}</span></div>
+      <div class="tip-row"><span class="tip-k">Cost</span><span class="tip-v" style="color:var(--ember)">$${(d.cost||0).toFixed(2)}</span></div>
+      <div class="tip-row"><span class="tip-k">Cache savings</span><span class="tip-v" style="color:var(--green)">$${(d.cache_savings||0).toFixed(2)}</span></div>
+      <div class="tip-row"><span class="tip-k">Output tokens</span><span class="tip-v">${fmt(d.output||0)}</span></div>`));
+    col.querySelector('.bar-stack').addEventListener('mousemove', moveTip);
+    col.querySelector('.bar-stack').addEventListener('mouseleave', hideTip);
+    chartEl.appendChild(col);
+  });
+
+  // Model breakdown
+  const mbEl = document.getElementById('model-breakdown');
+  mbEl.innerHTML = '';
+  const maxCost = Math.max(...models.map(m=>m.cost||0), 0.01);
+  if (!models.length) mbEl.innerHTML = '<div class="empty">No model data yet</div>';
+  else models.slice(0,6).forEach(m => {
+    const pct = ((m.cost||0)/maxCost*100).toFixed(0);
+    mbEl.innerHTML += `
+      <div style="margin-bottom:13px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;color:var(--text-2);font-weight:600">${m.model||'unknown'}</span>
+          <span style="font-size:12px;color:var(--ember);font-weight:700">$${(m.cost||0).toFixed(2)}</span>
+        </div>
+        <div style="height:3px;background:var(--border-2);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:var(--ember);border-radius:2px"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text-4);margin-top:3px">${m.calls||0} calls · ${fmt(m.output||0)} output tokens</div>
+      </div>`;
+  });
+
+  // Recent mini
+  const rmEl = document.getElementById('recent-mini');
+  rmEl.innerHTML = '';
+  if (!recent.length) rmEl.innerHTML = '<div class="empty">No requests yet — point your agent at <code style="color:var(--ember)">localhost:4000</code> to start</div>';
+  else {
+    const t = document.createElement('table');
+    t.innerHTML = `<thead><tr><th>Time</th><th>Model</th><th class="num">Cost</th><th class="num">Latency</th><th>Status</th></tr></thead><tbody>
+      ${recent.slice(0,10).map(r => `<tr>
+        <td style="font-size:11px;color:var(--text-3)">${r.ts.slice(11,19)}</td>
+        <td style="font-size:12px">${r.model||'?'}</td>
+        <td class="num" style="color:var(--ember)">${(r.cost_usd||0) > 0 ? '$'+(r.cost_usd).toFixed(4) : '—'}</td>
+        <td class="num">${fmtMs(r.latency_ms)}</td>
+        <td><span class="pill ${r.status===200?'pill-green':r.status>=400?'pill-ember':'pill-gray'}">${r.status}</span></td>
+      </tr>`).join('')}
+    </tbody>`;
+    rmEl.appendChild(t);
+  }
+}
+
+// ─── REQUESTS ───
+async function loadRequests() {
+  const rows = await fetch('/api/stats/recent').then(r=>r.json());
+  const tbody = document.getElementById('req-table');
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">No requests yet</td></tr>'; return; }
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td style="font-size:11px;color:var(--text-3);white-space:nowrap">${r.ts.slice(0,19).replace('T',' ')}</td>
+    <td>${provPill(r.provider)}</td>
+    <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.model||'?'}</td>
+    <td class="num">${fmt(r.input_tokens||0)}</td>
+    <td class="num">${fmt(r.output_tokens||0)}</td>
+    <td class="num c-ember">${(r.cost_usd||0) > 0 ? '$'+(r.cost_usd).toFixed(4) : '—'}</td>
+    <td class="num">${fmtMs(r.latency_ms)}</td>
+    <td><span class="pill ${r.status===200?'pill-green':r.status>=400?'pill-ember':'pill-gray'}">${r.status}${r.error?` <span title="${r.error}">⚠</span>`:''}</span></td>
+  </tr>`).join('');
+}
+
+// ─── MODELS ───
+async function loadModels() {
+  const [models, cfg] = await Promise.all([
+    fetch('/api/models').then(r=>r.json()),
+    fetch('/api/config').then(r=>r.json()),
+  ]);
+  const active = cfg.active_model || 'claude-sonnet-4-6';
+  const grid = document.getElementById('model-grid');
+  const priorities = ['claude-sonnet-4-6','gpt-4o','claude-haiku-3-5','gpt-4o-mini','gemini-2.0-flash','claude-opus-4','o3','llama-3.3-70b-versatile'];
+  const sorted = [...models].sort((a,b) => {
+    const ai = priorities.indexOf(a.id), bi = priorities.indexOf(b.id);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1; if (bi === -1) return -1;
+    return ai - bi;
+  });
+
+  grid.innerHTML = sorted.map(m => `
+    <div class="model-card ${m.id===active?'selected':''}" onclick="selectModel('${m.id}')">
+      <div class="model-provider">${m.provider}</div>
+      <div class="model-name">${m.id}</div>
+      <div class="model-price">In: <strong>$${m.input_per_m}/M</strong> · Out: <strong>$${m.output_per_m}/M</strong></div>
+      ${m.has_cache ? '<div style="margin-top:5px"><span class="pill pill-green" style="font-size:9px">cache ✓</span></div>' : ''}
+    </div>`).join('');
+
+  // Pricing table
+  document.getElementById('pricing-table').innerHTML = models.map(m => `<tr>
+    <td style="font-size:12px;font-weight:600">${m.id}</td>
+    <td>${provPill(m.provider)}</td>
+    <td class="num">$${m.input_per_m}</td>
+    <td class="num">$${m.output_per_m}</td>
+    <td class="num" style="color:var(--green)">${m.has_cache?'$'+(m.input_per_m*0.1).toFixed(3):'—'}</td>
+    <td>${m.has_cache?'<span class="pill pill-green" style="font-size:9px">✓</span>':'<span class="pill pill-gray" style="font-size:9px">—</span>'}</td>
+  </tr>`).join('');
+}
+
+async function selectModel(id) {
+  await fetch('/api/config', { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({active_model:id}) });
+  document.querySelectorAll('.model-card').forEach(el => el.classList.toggle('selected', el.onclick.toString().includes(`'${id}'`)));
+  // Re-render to be clean
+  loadModels();
+}
+
+// ─── SETTINGS ───
+async function loadSettings() {
+  const cfg = await fetch('/api/config').then(r=>r.json());
+  document.getElementById('cfg-daily-budget').value = cfg.daily_budget || 50;
+  document.getElementById('cfg-alert-threshold').value = cfg.alert_threshold || 80;
+  document.getElementById('cfg-anthropic-key').value = cfg.anthropic_key || '';
+  document.getElementById('cfg-openai-key').value = cfg.openai_key || '';
+  document.getElementById('cfg-google-key').value = cfg.google_key || '';
+  document.getElementById('cfg-groq-key').value = cfg.groq_key || '';
+  document.getElementById('cfg-ollama-endpoint').value = cfg.ollama_endpoint || '';
+  document.getElementById('cfg-lmstudio-endpoint').value = cfg.lmstudio_endpoint || '';
+}
+
+async function saveSettings() {
+  const patch = {
+    daily_budget: document.getElementById('cfg-daily-budget').value,
+    alert_threshold: document.getElementById('cfg-alert-threshold').value,
+    anthropic_key: document.getElementById('cfg-anthropic-key').value,
+    openai_key: document.getElementById('cfg-openai-key').value,
+    google_key: document.getElementById('cfg-google-key').value,
+    groq_key: document.getElementById('cfg-groq-key').value,
+    ollama_endpoint: document.getElementById('cfg-ollama-endpoint').value,
+    lmstudio_endpoint: document.getElementById('cfg-lmstudio-endpoint').value,
+  };
+  await fetch('/api/config', { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(patch) });
+  const msg = document.getElementById('save-msg');
+  msg.textContent = '✓ Saved';
+  msg.style.opacity = 1;
+  setTimeout(() => msg.style.opacity = 0, 2000);
+}
+
+// CHAT
+function renderMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^• /gm, '&nbsp;&nbsp;• ')
+    .replace(/\n/g, '<br>');
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msgs = document.getElementById('chat-messages');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  // User bubble
+  msgs.innerHTML += `<div class="chat-msg user"><div class="chat-bubble">${text}</div></div>`;
+  // Thinking
+  const thinkId = 'think-' + Date.now();
+  msgs.innerHTML += `<div class="chat-msg bot" id="${thinkId}"><div class="chat-bubble" style="color:var(--text-4)">…</div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  try {
+    const r = await fetch('/api/chat', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+    const d = await r.json();
+    document.getElementById(thinkId).outerHTML = `<div class="chat-msg bot"><div class="chat-bubble">${renderMarkdown(d.response||d.error||'Error')}</div></div>`;
+  } catch(e) {
+    document.getElementById(thinkId).outerHTML = `<div class="chat-msg bot"><div class="chat-bubble" style="color:var(--red)">Error: ${e.message}</div></div>`;
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Init + refresh
+loadDashboard();
+setInterval(loadDashboard, 15000); // refresh every 15s
+</script>
+</body>
+</html>
